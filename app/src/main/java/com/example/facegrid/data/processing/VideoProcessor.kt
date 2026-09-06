@@ -16,7 +16,6 @@ import com.example.facegrid.domain.model.ProcessingResult
 import com.example.facegrid.domain.model.ProcessingStage
 import com.example.facegrid.domain.model.ProgressUpdate
 import java.util.concurrent.TimeUnit
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -37,10 +36,6 @@ class VideoProcessor(private val context: Context) {
                     .build()
             )
             val embedder = GhostFaceNetEmbedder(context)
-            Log.d(
-                TAG,
-                "embedder fallback=${embedder.usesFallbackEmbedding} model=${embedder.modelDescription}"
-            )
             try {
                 val durationMs =
                     retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
@@ -99,10 +94,6 @@ class VideoProcessor(private val context: Context) {
                     if (rawDetections.isNotEmpty()) framesWithDetections++
                     totalDetections += rawDetections.size
                     totalVisibleFaces += visible.size
-                    Log.d(
-                        TAG,
-                        "frame=$frameIndex rawDetections=${rawDetections.size} detections=${detected.size} trackable=${trackable.size} visible=${visible.size} activeTracks=${tracks.size}"
-                    )
                     diagnostic.appendLine(
                         "frame=$frameIndex timeMs=${timestampUs / 1_000} rawDetections=${rawDetections.size} " +
                                 "dedupedDetections=${detected.size} trackableFaces=${trackable.size} " +
@@ -165,12 +156,6 @@ class VideoProcessor(private val context: Context) {
                 }
                 usableSegments.forEach { segment ->
                     val frameIndexes = segment.candidateFrames.map { it.frameIndex }
-                    Log.d(
-                        TAG,
-                        "segment=${segment.id} frameRange=${segment.frameStart}-${segment.frameEnd} bestFrame=${segment.bestFrame.frameIndex} candidates=${
-                            frameIndexes.joinToString(",")
-                        }"
-                    )
                     diagnostic.appendLine(
                         "segment=${segment.id} frameRange=${segment.frameStart}-${segment.frameEnd} " +
                                 "bestFrame=${segment.bestFrame.frameIndex} candidates=${
@@ -217,10 +202,6 @@ class VideoProcessor(private val context: Context) {
                     )
                 )
                 val identities = clusterSegments(embedded)
-                Log.d(
-                    TAG,
-                    "summary sampledFrames=$totalFrames framesWithDetections=$framesWithDetections detections=$totalDetections visibleFaces=$totalVisibleFaces segments=${usableSegments.size} identities=${identities.size} fallback=${embedder.usesFallbackEmbedding}"
-                )
                 diagnostic.appendLine(
                     "summary sampledFrames=$totalFrames framesWithDetections=$framesWithDetections " +
                             "detections=$totalDetections qualifiedFaces=$totalVisibleFaces segments=${usableSegments.size} " +
@@ -367,10 +348,6 @@ class VideoProcessor(private val context: Context) {
             frameStart = startFrame,
             frameEnd = lastFrame.frameIndex
         )
-    }
-
-    private companion object {
-        const val TAG = "FaceGridPipeline"
     }
 
     private fun averageEmbeddings(embeddings: List<FloatArray>): FloatArray {

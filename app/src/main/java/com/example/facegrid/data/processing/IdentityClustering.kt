@@ -3,7 +3,6 @@ package com.example.facegrid.data.processing
 import com.example.facegrid.domain.model.AppearanceSegment
 import com.example.facegrid.domain.model.FaceObservation
 import com.example.facegrid.domain.model.IdentityResult
-import android.util.Log
 
 data class EmbeddedSegment(
     val segment: AppearanceSegment,
@@ -56,12 +55,6 @@ fun clusterSegments(segments: List<EmbeddedSegment>): List<IdentityResult> {
         val (leftIndex, rightIndex) = bestPair ?: break
         val left = clusters[leftIndex]
         val right = clusters[rightIndex]
-        Log.d(
-            TAG,
-            "merge similarity=$bestSimilarity segments=${left.segments.joinToString(",") { it.segment.id.toString() }}+${
-                right.segments.joinToString(",") { it.segment.id.toString() }
-            }"
-        )
         left.segments += right.segments
         clusters.removeAt(rightIndex)
     }
@@ -92,23 +85,11 @@ fun clusterSegments(segments: List<EmbeddedSegment>): List<IdentityResult> {
         val (singletonIndex, targetIndex, similarity) = merge
         val singleton = clusters[singletonIndex]
         val target = clusters[targetIndex]
-        Log.d(
-            TAG,
-            "singleton-merge similarity=$similarity segment=${singleton.segments.single().segment.id} into=${
-                target.segments.joinToString(",") { it.segment.id.toString() }
-            }"
-        )
         target.segments += singleton.segments
         clusters.removeAt(singletonIndex)
     }
 
     val orderedClusters = clusters.sortedBy { cluster -> cluster.segments.minOf { it.segment.id } }
-    orderedClusters.forEachIndexed { index, cluster ->
-        Log.d(
-            TAG,
-            "cluster=${index + 1} segments=${cluster.segments.joinToString(",") { it.segment.id.toString() }}"
-        )
-    }
     return orderedClusters.mapIndexed { index, cluster ->
         val representative = cluster.segments
             .flatMap { it.segment.candidateFrames }
@@ -124,8 +105,6 @@ fun clusterSegments(segments: List<EmbeddedSegment>): List<IdentityResult> {
         )
     }
 }
-
-private const val TAG = "FaceGridPipeline"
 
 private fun clustersAreCompatible(left: WorkingCluster, right: WorkingCluster): Boolean {
     val leftFrames = left.segments

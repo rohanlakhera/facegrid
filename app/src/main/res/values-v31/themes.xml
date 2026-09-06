@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <style name="Theme.FaceGrid" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/facegrid_night</item>
         <item name="android:navigationBarColor">@color/facegrid_night</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowSplashScreenBackground">@color/facegrid_night</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/facegrid_night</item>
     </style>
 </resources>

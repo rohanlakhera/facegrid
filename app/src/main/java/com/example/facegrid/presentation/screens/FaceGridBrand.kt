@@ -31,7 +31,7 @@ fun FaceGridBrand(modifier: Modifier = Modifier) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(16.dp)
+                    .size(17.dp)
                     .clip(RoundedCornerShape(5.dp))
                     .background(MaterialTheme.colorScheme.tertiary)
             )

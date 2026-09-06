@@ -151,7 +151,10 @@ fun FaceGridApp(viewModel: FaceGridViewModel) {
                         }
                     )
 
-                    is FaceGridUiState.Processing -> ProcessingScreen(current.progress)
+                    is FaceGridUiState.Processing -> ProcessingScreen(
+                        progress = current.progress,
+                        onCancel = viewModel::cancelProcessing
+                    )
                     is FaceGridUiState.Result -> ResultScreen(
                         result = current,
                         onSave = { withGalleryPermission(viewModel::saveCollage) },

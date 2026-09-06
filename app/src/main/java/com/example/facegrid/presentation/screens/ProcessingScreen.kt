@@ -9,10 +9,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
@@ -25,7 +31,11 @@ import com.example.facegrid.domain.model.ProgressUpdate
 import com.example.facegrid.ui.theme.FaceGridTheme
 
 @Composable
-fun ProcessingScreen(progress: ProgressUpdate) {
+fun ProcessingScreen(
+    progress: ProgressUpdate,
+    onCancel: () -> Unit = {}
+) {
+    var showCancelDialog by remember { mutableStateOf(false) }
     val targetProgress = processingProgress(progress)
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress,
@@ -67,6 +77,43 @@ fun ProcessingScreen(progress: ProgressUpdate) {
             "This may take a little while.",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(Modifier.height(18.dp))
+        TextButton(
+            onClick = { showCancelDialog = true },
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        ) {
+            Text("Cancel")
+        }
+    }
+
+    if (showCancelDialog) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            title = { Text("Cancel collage generation?") },
+            text = {
+                Text("The video will stop processing and no collage will be created.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCancelDialog = false
+                        onCancel()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Cancel generation")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = false }) {
+                    Text("Keep processing")
+                }
+            }
         )
     }
 }

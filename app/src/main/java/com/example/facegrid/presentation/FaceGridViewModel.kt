@@ -17,6 +17,8 @@ import com.example.facegrid.domain.usecase.SaveCollageUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -45,27 +47,39 @@ class FaceGridViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow<FaceGridUiState>(FaceGridUiState.Home())
     val state: StateFlow<FaceGridUiState> = _state.asStateFlow()
+    private var processingJob: Job? = null
 
     init {
         refreshSavedCollages()
     }
 
     fun processVideo(uri: Uri) {
+        processingJob?.cancel()
         _state.value = FaceGridUiState.Processing(
             ProgressUpdate(ProcessingStage.EXTRACTING, 0, 0, "Preparing video")
         )
-        viewModelScope.launch {
+        processingJob = viewModelScope.launch {
             try {
                 val result = processVideo(uri) { progress ->
                     _state.value = FaceGridUiState.Processing(progress)
                 }
                 delay(320.milliseconds)
                 _state.value = FaceGridUiState.Result(result)
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Throwable) {
                 _state.value =
                     FaceGridUiState.Error(error.message ?: "Could not process this video")
+            } finally {
+                processingJob = null
             }
         }
+    }
+
+    fun cancelProcessing() {
+        processingJob?.cancel()
+        processingJob = null
+        reset()
     }
 
     fun saveCollage() {
@@ -99,6 +113,8 @@ class FaceGridViewModel(
     }
 
     fun reset() {
+        processingJob?.cancel()
+        processingJob = null
         _state.value = FaceGridUiState.Home(isLoadingSaved = true)
         refreshSavedCollages()
     }

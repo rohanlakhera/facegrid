@@ -120,6 +120,23 @@ class FaceGridViewModel(
         } ?: reset()
     }
 
+    fun deleteSavedCollage(collage: SavedCollage) {
+        val current = _state.value as? FaceGridUiState.SavedResult ?: return
+        viewModelScope.launch {
+            runCatching { galleryRepository.delete(collage.uri) }
+                .onSuccess {
+                    current.previousCollages?.let { previous ->
+                        _state.value = FaceGridUiState.SavedCollages(
+                            previous.filterNot { it.uri == collage.uri }
+                        )
+                    } ?: refreshSavedCollages()
+                }
+                .onFailure { error ->
+                    _state.value = FaceGridUiState.Error(error.message ?: "Could not delete collage")
+                }
+        }
+    }
+
     private fun refreshSavedCollages() {
         viewModelScope.launch {
             val saved = runCatching { galleryRepository.listSaved() }.getOrDefault(emptyList())

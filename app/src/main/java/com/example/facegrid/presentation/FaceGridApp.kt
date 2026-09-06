@@ -113,7 +113,10 @@ fun FaceGridApp(viewModel: FaceGridViewModel) {
                 is FaceGridUiState.SavedResult -> SavedCollageResultScreen(
                     collage = current.collage,
                     onBack = viewModel::backFromSavedCollage,
-                    onShare = { shareCollage(context, current.collage.uri) }
+                    onShare = { shareCollage(context, current.collage.uri) },
+                    onDelete = {
+                        withGalleryPermission { viewModel.deleteSavedCollage(current.collage) }
+                    }
                 )
 
                 is FaceGridUiState.Processing -> ProcessingScreen(current.progress)

@@ -7,4 +7,5 @@ import com.example.facegrid.domain.model.SavedCollage
 interface GalleryRepository {
     suspend fun save(bitmap: Bitmap): Uri
     suspend fun listSaved(): List<SavedCollage> = emptyList()
+    suspend fun delete(uri: Uri)
 }

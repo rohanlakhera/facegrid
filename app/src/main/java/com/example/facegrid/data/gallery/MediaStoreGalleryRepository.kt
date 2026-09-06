@@ -107,4 +107,10 @@ class MediaStoreGalleryRepository(context: Context) : GalleryRepository {
             throw error
         }
     }
+
+    override suspend fun delete(uri: Uri) = withContext(Dispatchers.IO) {
+        if (appContext.contentResolver.delete(uri, null, null) == 0) {
+            error("Could not delete collage")
+        }
+    }
 }

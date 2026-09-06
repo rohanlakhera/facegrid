@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import android.media.MediaMetadataRetriever
+import android.provider.OpenableColumns
 
 class VideoProcessor(private val context: Context) {
     suspend fun process(uri: Uri, onProgress: (ProgressUpdate) -> Unit): ProcessingResult = withContext(Dispatchers.Default) {
@@ -172,12 +173,12 @@ class VideoProcessor(private val context: Context) {
                         "representativeFrame=${identity.representative.frameIndex}"
                 )
             }
-            onProgress(ProgressUpdate(ProcessingStage.RENDERING, 1, 1, "Rendering collage"))
             ProcessingResult(
                 collage = CollageRenderer.render(identities),
                 identities = identities,
                 usesFallbackEmbedding = embedder.usesFallbackEmbedding,
-                diagnosticLog = diagnostic.toString()
+                diagnosticLog = diagnostic.toString(),
+                videoName = resolveVideoName(uri)
             )
         } finally {
             embedder.close()
@@ -209,6 +210,15 @@ class VideoProcessor(private val context: Context) {
         }
         val frameBoxes = observations.map { Rect(it.boundingBox) }
         return observations.map { it.copy(frameFaceBoxes = frameBoxes.map(::Rect)) }
+    }
+
+    private fun resolveVideoName(uri: Uri): String? {
+        context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                return cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+            }
+        }
+        return uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.isNotBlank() }
     }
 
     private fun deduplicateDetections(faces: List<FaceObservation>): List<FaceObservation> {

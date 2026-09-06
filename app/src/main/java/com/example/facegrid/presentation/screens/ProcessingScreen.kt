@@ -1,5 +1,6 @@
 package com.example.facegrid.presentation.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,10 +9,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -22,39 +26,76 @@ import com.example.facegrid.ui.theme.FaceGridTheme
 
 @Composable
 fun ProcessingScreen(progress: ProgressUpdate) {
-    val fraction = if (progress.total <= 0) 0f else (progress.current.toFloat() / progress.total).coerceIn(0f, 1f)
-    Column(modifier = Modifier.fillMaxSize().padding(28.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center) {
-        CircularProgressIndicator(modifier = Modifier.size(48.dp))
-        Spacer(Modifier.height(24.dp))
-        Text("Building your grid", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(8.dp))
-        Text(progress.message, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(20.dp))
-        LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
+    val targetProgress = processingProgress(progress)
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = tween(durationMillis = 280),
+        label = "processing progress"
+    )
+
+    Column(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        FaceGridBrand()
+        Spacer(Modifier.height(54.dp))
+        CircularProgressIndicator(
+            progress = { animatedProgress },
+            modifier = Modifier.size(96.dp),
+            strokeWidth = 7.dp,
+            color = MaterialTheme.colorScheme.secondary
+        )
+        Spacer(Modifier.height(30.dp))
+        Text(processingTitle(progress.stage), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(10.dp))
-        Text(stageLabel(progress.stage), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+        Text(
+            processingDescription(progress.stage),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Spacer(Modifier.height(28.dp))
+        Text("This may take a little while.", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
     }
 }
 
-private fun stageLabel(stage: ProcessingStage): String = when (stage) {
-    ProcessingStage.EXTRACTING -> "Reading video frames"
-    ProcessingStage.DETECTING -> "Detecting faces"
-    ProcessingStage.EMBEDDING -> "Creating face embeddings"
-    ProcessingStage.CLUSTERING -> "Grouping people"
-    ProcessingStage.RENDERING -> "Creating collage"
+private fun processingProgress(progress: ProgressUpdate): Float {
+    val phaseProgress = if (progress.total > 0) {
+        (progress.current.toFloat() / progress.total).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+
+    // Extraction and detection share one band. Detection does not get a
+    // separate portion, preventing the indicator from jumping backwards.
+    return when (progress.stage) {
+        ProcessingStage.EXTRACTING,
+        ProcessingStage.DETECTING -> phaseProgress * 0.65f
+        ProcessingStage.EMBEDDING -> 0.65f + phaseProgress * 0.25f
+        ProcessingStage.CLUSTERING -> 0.90f + phaseProgress * 0.10f
+    }
+}
+
+private fun processingTitle(stage: ProcessingStage): String = when (stage) {
+    ProcessingStage.EXTRACTING,
+    ProcessingStage.DETECTING -> "Discovering the moments"
+    ProcessingStage.EMBEDDING -> "Recognizing familiar faces"
+    ProcessingStage.CLUSTERING -> "Putting it all together"
+}
+
+private fun processingDescription(stage: ProcessingStage): String = when (stage) {
+    ProcessingStage.EXTRACTING,
+    ProcessingStage.DETECTING -> "Looking through your video and finding the people who make it special."
+    ProcessingStage.EMBEDDING -> "Comparing appearances so each person gets their own place."
+    ProcessingStage.CLUSTERING -> "Bringing each person’s best moments together and giving your portrait story its final shape."
 }
 
 @Preview(showBackground = true, showSystemUi = true, name = "Processing screen")
 @Composable
 private fun ProcessingScreenPreview() {
     FaceGridTheme {
-        ProcessingScreen(
-            ProgressUpdate(
-                stage = ProcessingStage.DETECTING,
-                current = 120,
-                total = 600,
-                message = "Detecting faces: frame 120/600"
-            )
-        )
+        ProcessingScreen(ProgressUpdate(ProcessingStage.DETECTING, 0, 0, ""))
     }
 }

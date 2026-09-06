@@ -3,6 +3,13 @@ package com.example.facegrid.domain.model
 import android.graphics.Bitmap
 import android.graphics.PointF
 import android.graphics.Rect
+import android.net.Uri
+
+data class SavedCollage(
+    val uri: Uri,
+    val displayName: String,
+    val dateAddedSeconds: Long
+)
 
 data class ProgressUpdate(
     val stage: ProcessingStage,
@@ -15,8 +22,7 @@ enum class ProcessingStage {
     EXTRACTING,
     DETECTING,
     EMBEDDING,
-    CLUSTERING,
-    RENDERING
+    CLUSTERING
 }
 
 data class FaceObservation(
@@ -58,5 +64,6 @@ data class ProcessingResult(
     val collage: Bitmap,
     val identities: List<IdentityResult>,
     val usesFallbackEmbedding: Boolean = false,
-    val diagnosticLog: String = ""
+    val diagnosticLog: String = "",
+    val videoName: String? = null
 )

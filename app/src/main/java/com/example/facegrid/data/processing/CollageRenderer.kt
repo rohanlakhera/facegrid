@@ -9,24 +9,31 @@ import android.graphics.RectF
 import kotlin.math.ceil
 import kotlin.math.max
 import com.example.facegrid.domain.model.IdentityResult
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.withClip
 
 object CollageRenderer {
     private const val WIDTH = 1080
     private const val HEIGHT = 1920
     private const val MARGIN = 48f
     private const val GAP = 24f
+    private val CANVAS_BACKGROUND = Color.rgb(230, 230, 200)
+    private val TITLE_COLOR = Color.rgb(30, 29, 28)
+    private val SUBTITLE_COLOR = Color.rgb(110, 103, 96)
+    private val TILE_BACKGROUND = Color.rgb(231, 224, 215)
+    private const val DETAIL_TEXT_COLOR = 0xFFE9E2DA.toInt()
 
     fun render(identities: List<IdentityResult>): Bitmap {
-        val output = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888)
+        val output = createBitmap(WIDTH, HEIGHT)
         val canvas = Canvas(output)
-        canvas.drawColor(Color.rgb(247, 244, 239))
+        canvas.drawColor(CANVAS_BACKGROUND)
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.rgb(30, 29, 28)
+            color = TITLE_COLOR
             textSize = 64f
             typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
         }
         val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.rgb(110, 103, 96)
+            color = SUBTITLE_COLOR
             textSize = 30f
         }
         canvas.drawText("FaceGrid", MARGIN, 92f, titlePaint)
@@ -50,25 +57,36 @@ object CollageRenderer {
 
     private fun drawTile(canvas: Canvas, identity: IdentityResult, tile: RectF) {
         val tilePath = Path().apply { addRoundRect(tile, 32f, 32f, Path.Direction.CW) }
-        canvas.save()
-        canvas.clipPath(tilePath)
-        val background = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(231, 224, 215) }
-        canvas.drawRect(tile, background)
-        val source = squareCrop(identity.representative.bitmap, identity.representative.boundingBox, 1.45f)
-        canvas.drawBitmap(source, null, tile, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
-        source.recycle()
-        val shade = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            shader = android.graphics.LinearGradient(tile.left, tile.bottom - tile.height() * 0.45f, tile.left, tile.bottom, Color.TRANSPARENT, 0xCC000000.toInt(), android.graphics.Shader.TileMode.CLAMP)
+        canvas.withClip(tilePath) {
+            val background = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = TILE_BACKGROUND }
+            drawRect(tile, background)
+            val source = squareCrop(
+                identity.representative.bitmap,
+                identity.representative.boundingBox,
+                1.45f
+            )
+            drawBitmap(source, null, tile, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
+            source.recycle()
+            val shade = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                shader = android.graphics.LinearGradient(
+                    tile.left,
+                    tile.bottom - tile.height() * 0.45f,
+                    tile.left,
+                    tile.bottom,
+                    Color.TRANSPARENT,
+                    0xCC000000.toInt(),
+                    android.graphics.Shader.TileMode.CLAMP
+                )
+            }
+            drawRect(tile, shade)
         }
-        canvas.drawRect(tile, shade)
-        canvas.restore()
         val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textSize = max(26f, tile.width() * 0.075f)
             typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
         }
         val detailPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFE9E2DA.toInt()
+            color = DETAIL_TEXT_COLOR
             textSize = max(20f, tile.width() * 0.052f)
         }
         canvas.drawText("Person ${identity.id}", tile.left + 24f, tile.bottom - 62f, labelPaint)

@@ -9,7 +9,27 @@ data class EmbeddedSegment(
     val segment: AppearanceSegment,
     val embedding: FloatArray,
     val candidateEmbeddings: List<FloatArray> = listOf(embedding)
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as EmbeddedSegment
+
+        if (segment != other.segment) return false
+        if (!embedding.contentEquals(other.embedding)) return false
+        if (candidateEmbeddings != other.candidateEmbeddings) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = segment.hashCode()
+        result = 31 * result + embedding.contentHashCode()
+        result = 31 * result + candidateEmbeddings.hashCode()
+        return result
+    }
+}
 
 private data class WorkingCluster(
     val segments: MutableList<EmbeddedSegment>
@@ -18,12 +38,6 @@ private data class WorkingCluster(
 fun clusterSegments(segments: List<EmbeddedSegment>): List<IdentityResult> {
     val clusters = segments.map { WorkingCluster(mutableListOf(it)) }.toMutableList()
 
-    // Merge the most similar compatible pair repeatedly. Global clustering is
-    // less order-sensitive than assigning each segment to the first centroid
-    // encountered, which matters when the first representative is blurred or
-    // heavily angled. A merge is incompatible when the two groups contain
-    // observations from the same sampled frame: those are simultaneous faces
-    // and must remain separate identities.
     while (true) {
         var bestPair: Pair<Int, Int>? = null
         var bestSimilarity = ProcessingConfig.IDENTITY_SIMILARITY_THRESHOLD
@@ -42,16 +56,16 @@ fun clusterSegments(segments: List<EmbeddedSegment>): List<IdentityResult> {
         val (leftIndex, rightIndex) = bestPair ?: break
         val left = clusters[leftIndex]
         val right = clusters[rightIndex]
-        Log.d(TAG, "merge similarity=$bestSimilarity segments=${left.segments.joinToString(",") { it.segment.id.toString() }}+${right.segments.joinToString(",") { it.segment.id.toString() }}")
+        Log.d(
+            TAG,
+            "merge similarity=$bestSimilarity segments=${left.segments.joinToString(",") { it.segment.id.toString() }}+${
+                right.segments.joinToString(",") { it.segment.id.toString() }
+            }"
+        )
         left.segments += right.segments
         clusters.removeAt(rightIndex)
     }
 
-    // A difficult pose or a partially occluded face can make one appearance
-    // look unlike the average of its identity. Recover only singleton clusters
-    // when one individual appearance is a strong and unambiguous match. This
-    // is deliberately conservative: it does not assume a fixed person count
-    // or equal appearance counts, and it still respects same-frame conflicts.
     while (true) {
         var bestSingleton: Triple<Int, Int, Float>? = null
         var bestMargin = 0f
@@ -60,9 +74,6 @@ fun clusterSegments(segments: List<EmbeddedSegment>): List<IdentityResult> {
             val candidates = clusters.indices
                 .filter { it != singletonIndex && clustersAreCompatible(singleton, clusters[it]) }
                 .map { targetIndex ->
-                    // A singleton may have one usable crop even when its
-                    // averaged segment embedding is diluted by blur, pose, or
-                    // a detector box that changes during the shot.
                     targetIndex to maxCandidateSimilarity(singleton, clusters[targetIndex])
                 }
                 .sortedByDescending { it.second }
@@ -81,23 +92,27 @@ fun clusterSegments(segments: List<EmbeddedSegment>): List<IdentityResult> {
         val (singletonIndex, targetIndex, similarity) = merge
         val singleton = clusters[singletonIndex]
         val target = clusters[targetIndex]
-        Log.d(TAG, "singleton-merge similarity=$similarity segment=${singleton.segments.single().segment.id} into=${target.segments.joinToString(",") { it.segment.id.toString() }}")
+        Log.d(
+            TAG,
+            "singleton-merge similarity=$similarity segment=${singleton.segments.single().segment.id} into=${
+                target.segments.joinToString(",") { it.segment.id.toString() }
+            }"
+        )
         target.segments += singleton.segments
         clusters.removeAt(singletonIndex)
     }
 
     val orderedClusters = clusters.sortedBy { cluster -> cluster.segments.minOf { it.segment.id } }
     orderedClusters.forEachIndexed { index, cluster ->
-        Log.d(TAG, "cluster=${index + 1} segments=${cluster.segments.joinToString(",") { it.segment.id.toString() }}")
+        Log.d(
+            TAG,
+            "cluster=${index + 1} segments=${cluster.segments.joinToString(",") { it.segment.id.toString() }}"
+        )
     }
     return orderedClusters.mapIndexed { index, cluster ->
         val representative = cluster.segments
             .flatMap { it.segment.candidateFrames }
             .let { candidates ->
-                // A shared frame is useful for identity matching, but it is a
-                // poor collage tile because it shows another person as well.
-                // Prefer a strong single-person frame whenever this identity
-                // has one; use shared frames only as a fallback.
                 val singlePerson = candidates.filter { it.frameFaceBoxes.size <= 1 }
                 (singlePerson.ifEmpty { candidates }).maxBy { representativeScore(it) }
             }
@@ -148,15 +163,24 @@ private fun maxCandidateSimilarity(left: WorkingCluster, right: WorkingCluster):
 
 private fun segmentSimilarity(left: EmbeddedSegment, right: EmbeddedSegment): Float {
     val pairwise = left.candidateEmbeddings.flatMap { leftEmbedding ->
-        right.candidateEmbeddings.map { rightEmbedding -> cosineSimilarity(leftEmbedding, rightEmbedding) }
+        right.candidateEmbeddings.map { rightEmbedding ->
+            cosineSimilarity(
+                leftEmbedding,
+                rightEmbedding
+            )
+        }
     }.sortedDescending()
     if (pairwise.isEmpty()) return cosineSimilarity(left.embedding, right.embedding)
     return pairwise.take(ProcessingConfig.SEGMENT_SIMILARITY_TOP_K).average().toFloat()
 }
 
 fun representativeScore(face: FaceObservation): Double {
-    val frontality = (1.0 - (kotlin.math.abs(face.eulerY) / ProcessingConfig.MAX_EULER_Y).coerceIn(0f, 1f)) *
-        (1.0 - (kotlin.math.abs(face.eulerZ) / ProcessingConfig.MAX_EULER_Z).coerceIn(0f, 1f))
+    val frontality =
+        (1.0 - (kotlin.math.abs(face.eulerY) / ProcessingConfig.MAX_EULER_Y).coerceIn(0f, 1f)) *
+                (1.0 - (kotlin.math.abs(face.eulerZ) / ProcessingConfig.MAX_EULER_Z).coerceIn(
+                    0f,
+                    1f
+                ))
     val sharpness = (face.sharpness / (ProcessingConfig.MIN_SHARPNESS * 8.0)).coerceIn(0.0, 1.0)
     val eyes = ((face.leftEyeOpenProbability + face.rightEyeOpenProbability) / 2f).coerceIn(0f, 1f)
     val smile = face.smileProbability.coerceIn(0f, 1f)

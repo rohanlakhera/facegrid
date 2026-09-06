@@ -26,10 +26,13 @@ class MediaStoreGalleryRepository(context: Context) : GalleryRepository {
         )
         val (selection, selectionArgs) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             "${MediaStore.Images.Media.RELATIVE_PATH} = ? AND ${MediaStore.Images.Media.DISPLAY_NAME} LIKE ?" to
-                arrayOf("${Environment.DIRECTORY_PICTURES}/FaceGrid/", "facegrid_%")
+                    arrayOf("${Environment.DIRECTORY_PICTURES}/FaceGrid/", "facegrid_%")
         } else {
             "${MediaStore.Images.Media.DATA} LIKE ? AND ${MediaStore.Images.Media.DISPLAY_NAME} LIKE ?" to
-                arrayOf("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/FaceGrid/%", "facegrid_%")
+                    arrayOf(
+                        "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/FaceGrid/%",
+                        "facegrid_%"
+                    )
         }
         resolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -45,7 +48,10 @@ class MediaStoreGalleryRepository(context: Context) : GalleryRepository {
                 while (cursor.moveToNext()) {
                     add(
                         SavedCollage(
-                            uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor.getLong(idColumn)),
+                            uri = ContentUris.withAppendedId(
+                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                cursor.getLong(idColumn)
+                            ),
                             displayName = cursor.getString(nameColumn),
                             dateAddedSeconds = cursor.getLong(dateColumn)
                         )
@@ -62,10 +68,16 @@ class MediaStoreGalleryRepository(context: Context) : GalleryRepository {
             put(MediaStore.Images.Media.DISPLAY_NAME, filename)
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/FaceGrid")
+                put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_PICTURES}/FaceGrid"
+                )
                 put(MediaStore.Images.Media.IS_PENDING, 1)
             } else {
-                val directory = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "FaceGrid")
+                val directory = File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+                    "FaceGrid"
+                )
                 directory.mkdirs()
                 put(MediaStore.Images.Media.DATA, File(directory, filename).absolutePath)
             }
@@ -74,10 +86,20 @@ class MediaStoreGalleryRepository(context: Context) : GalleryRepository {
             ?: error("Gallery refused the new image")
         try {
             resolver.openOutputStream(uri)?.use { stream ->
-                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 95, stream)) error("Could not encode collage")
+                if (!bitmap.compress(
+                        Bitmap.CompressFormat.JPEG,
+                        95,
+                        stream
+                    )
+                ) error("Could not encode collage")
             } ?: error("Could not open gallery output")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                resolver.update(uri, ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }, null, null)
+                resolver.update(
+                    uri,
+                    ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) },
+                    null,
+                    null
+                )
             }
             uri
         } catch (error: Throwable) {

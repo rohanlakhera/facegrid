@@ -6,7 +6,8 @@ import com.example.facegrid.domain.model.ProcessingResult
 import com.example.facegrid.domain.model.ProgressUpdate
 import com.example.facegrid.domain.repository.VideoProcessingRepository
 
-class VideoProcessingRepositoryImpl(private val processor: VideoProcessor) : VideoProcessingRepository {
+class VideoProcessingRepositoryImpl(private val processor: VideoProcessor) :
+    VideoProcessingRepository {
     override suspend fun process(uri: Uri, onProgress: (ProgressUpdate) -> Unit): ProcessingResult =
         processor.process(uri, onProgress)
 }

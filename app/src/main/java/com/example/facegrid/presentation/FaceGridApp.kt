@@ -38,20 +38,30 @@ fun FaceGridApp(viewModel: FaceGridViewModel) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var lastSavedUri by remember { mutableStateOf<android.net.Uri?>(null) }
-    val videoPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-        viewModel.processVideo(uri)
-    }
+    val videoPicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+            viewModel.processVideo(uri)
+        }
     var pendingGalleryAction by remember { mutableStateOf<(() -> Unit)?>(null) }
-    val legacyStoragePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        pendingGalleryAction?.invoke()
-        pendingGalleryAction = null
-    }
+    val legacyStoragePermission =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+            pendingGalleryAction?.invoke()
+            pendingGalleryAction = null
+        }
 
     fun withGalleryPermission(action: () -> Unit) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             pendingGalleryAction = action
             legacyStoragePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -80,7 +90,9 @@ fun FaceGridApp(viewModel: FaceGridViewModel) {
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Surface(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
             color = MaterialTheme.colorScheme.background
         ) {
             when (val current = state) {
@@ -91,16 +103,19 @@ fun FaceGridApp(viewModel: FaceGridViewModel) {
                     onSeeAll = viewModel::showSavedCollages,
                     onOpen = viewModel::showSavedCollage
                 )
+
                 is FaceGridUiState.SavedCollages -> SavedCollagesScreen(
                     collages = current.collages,
                     onBack = viewModel::reset,
                     onOpen = viewModel::showSavedCollage
                 )
+
                 is FaceGridUiState.SavedResult -> SavedCollageResultScreen(
                     collage = current.collage,
                     onBack = viewModel::backFromSavedCollage,
                     onShare = { shareCollage(context, current.collage.uri) }
                 )
+
                 is FaceGridUiState.Processing -> ProcessingScreen(current.progress)
                 is FaceGridUiState.Result -> ResultScreen(
                     result = current,
@@ -113,6 +128,7 @@ fun FaceGridApp(viewModel: FaceGridViewModel) {
                     onPickAnother = { videoPicker.launch(arrayOf("video/*")) },
                     onBack = viewModel::reset
                 )
+
                 is FaceGridUiState.Error -> ErrorScreen(current.message, viewModel::reset)
             }
         }

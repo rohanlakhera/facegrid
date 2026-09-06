@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,6 +41,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.facegrid.domain.model.SavedCollage
@@ -65,45 +68,37 @@ fun HomeScreen(
     ) {
         FaceGridBrand()
         Spacer(Modifier.height(34.dp))
-        Text("Make a story\nfrom every face.", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+        Text(
+            "Make a story\nfrom every face.",
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.Bold
+        )
         Spacer(Modifier.height(12.dp))
         Text(
-            "FaceGrid turns the moving moments in a portrait video into a clean, shareable collage.",
+            "Turn the moving moments in a portrait video into a clean, shareable collage.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(28.dp))
 
-        when {
-            isLoadingSaved -> SavedCollagePlaceholders()
-            savedCollages.isNotEmpty() -> {
-                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
-                    Text("Saved collages", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.width(8.dp))
-                    Text("${savedCollages.size}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.offset(y = (-4).dp))
-                    Spacer(Modifier.weight(1f))
-                    TextButton(onClick = onSeeAll, modifier = Modifier.offset(y = 6.dp)) { Text("See all") }
-                }
-                Spacer(Modifier.height(14.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    items(savedCollages, key = { it.uri.toString() }) { collage ->
-                        SavedCollageCard(collage, onClick = { onOpen(collage) })
-                    }
-                }
-            }
-            else -> EmptyCollageCard()
-        }
-
-        Spacer(Modifier.height(28.dp))
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.primary
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                Text("Create something new", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    "Create something new",
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
                 Spacer(Modifier.height(6.dp))
-                Text("Choose a portrait video and let FaceGrid find the story inside it.", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f), style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "Choose a portrait video and let FaceGrid find the story inside it.",
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
                 Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = onPick,
@@ -119,8 +114,54 @@ fun HomeScreen(
                 }
             }
         }
-        Spacer(Modifier.height(12.dp))
-        Text("Your videos are processed privately on this device.", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        Spacer(Modifier.height(28.dp))
+
+        when {
+            isLoadingSaved -> SavedCollagePlaceholders()
+            savedCollages.isNotEmpty() -> {
+                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "Saved collages",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "${savedCollages.size}",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.offset(y = (-4).dp)
+                    )
+                    Spacer(Modifier.weight(1f))
+                    TextButton(
+                        onClick = onSeeAll,
+                        modifier = Modifier
+                            .offset(y = 9.dp)
+                    ) {
+                        Text(
+                            text = "See all",
+                            textDecoration = TextDecoration.Underline
+                        )
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    items(savedCollages, key = { it.uri.toString() }) { collage ->
+                        SavedCollageCard(collage, onClick = { onOpen(collage) })
+                    }
+                }
+            }
+
+            else -> EmptyCollageCard()
+        }
+
+        Spacer(Modifier.height(28.dp))
+        Text(
+            "Your videos are processed privately on this device.",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -130,13 +171,17 @@ private fun SavedCollageCard(collage: SavedCollage, onClick: () -> Unit) {
     val bitmap by produceState<Bitmap?>(initialValue = null, key1 = collage.uri) {
         value = withContext(Dispatchers.IO) {
             runCatching {
-                context.contentResolver.openInputStream(collage.uri)?.use(BitmapFactory::decodeStream)
+                context.contentResolver.openInputStream(collage.uri)
+                    ?.use(BitmapFactory::decodeStream)
             }.getOrNull()
         }
     }
     Column(modifier = Modifier.width(148.dp)) {
         Card(
-            modifier = Modifier.fillMaxWidth().height(264.dp).clickable(onClick = onClick),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(264.dp)
+                .clickable(onClick = onClick),
             shape = RoundedCornerShape(22.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
@@ -154,17 +199,33 @@ private fun SavedCollageCard(collage: SavedCollage, onClick: () -> Unit) {
             }
         }
         Spacer(Modifier.height(8.dp))
-        Text("Saved ${DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(collage.dateAddedSeconds * 1000))}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            "Saved ${
+                DateFormat.getDateInstance(DateFormat.MEDIUM)
+                    .format(Date(collage.dateAddedSeconds * 1000))
+            }",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
 @Composable
 private fun SavedCollagePlaceholders() {
-    Text("Your saved collages", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    Text(
+        "Your saved collages",
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold
+    )
     Spacer(Modifier.height(14.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         repeat(2) {
-            Box(Modifier.size(width = 148.dp, height = 264.dp).clip(RoundedCornerShape(22.dp)).background(MaterialTheme.colorScheme.surfaceVariant))
+            Box(
+                Modifier
+                    .size(width = 148.dp, height = 264.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            )
         }
     }
 }
@@ -177,17 +238,41 @@ private fun EmptyCollageCard() {
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(86.dp).clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.secondaryContainer), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .size(86.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Box(Modifier.size(width = 20.dp, height = 46.dp).clip(RoundedCornerShape(6.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)))
-                    Box(Modifier.size(width = 20.dp, height = 30.dp).clip(RoundedCornerShape(6.dp)).background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f)))
+                    Box(
+                        Modifier
+                            .size(width = 20.dp, height = 46.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
+                    )
+                    Box(
+                        Modifier
+                            .size(width = 20.dp, height = 30.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f))
+                    )
                 }
             }
             Spacer(Modifier.width(14.dp))
             Column {
-                Text("Your first story starts here", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    "Your first story starts here",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
                 Spacer(Modifier.height(4.dp))
-                Text("Save a collage and it will appear here.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Save a collage and it will appear here.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -196,5 +281,12 @@ private fun EmptyCollageCard() {
 @Preview(showBackground = true, showSystemUi = true, name = "Home screen")
 @Composable
 private fun HomeScreenPreview() {
-    FaceGridTheme { HomeScreen(savedCollages = emptyList(), isLoadingSaved = false, onPick = {}, onSeeAll = {}, onOpen = {}) }
+    FaceGridTheme {
+        HomeScreen(
+            savedCollages = emptyList(),
+            isLoadingSaved = false,
+            onPick = {},
+            onSeeAll = {},
+            onOpen = {})
+    }
 }

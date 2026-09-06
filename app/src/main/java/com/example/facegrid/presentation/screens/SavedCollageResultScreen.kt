@@ -57,7 +57,8 @@ fun SavedCollageResultScreen(
     val bitmap by produceState<Bitmap?>(initialValue = null, key1 = collage.uri) {
         value = withContext(Dispatchers.IO) {
             runCatching {
-                context.contentResolver.openInputStream(collage.uri)?.use(BitmapFactory::decodeStream)
+                context.contentResolver.openInputStream(collage.uri)
+                    ?.use(BitmapFactory::decodeStream)
             }.getOrNull()
         }
     }
@@ -69,17 +70,25 @@ fun SavedCollageResultScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
-                .padding(top = 75.dp, bottom = 22.dp)
+                .padding(top = 70.dp, bottom = 22.dp)
         ) {
             Spacer(Modifier.height(18.dp))
-            Text("Saved story", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
             Text(
-                DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(collage.dateAddedSeconds * 1000)),
+                "Saved story",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                DateFormat.getDateInstance(DateFormat.MEDIUM)
+                    .format(Date(collage.dateAddedSeconds * 1000)),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(10.dp))
-            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
                 Text(
                     collage.displayName,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -94,26 +103,44 @@ fun SavedCollageResultScreen(
                 Image(
                     bitmap = bitmap!!.asImageBitmap(),
                     contentDescription = "Saved FaceGrid story collage",
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(26.dp)),
                     contentScale = ContentScale.FillWidth
                 )
             } else {
                 Surface(
-                    modifier = Modifier.fillMaxWidth().height(420.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(420.dp),
                     shape = RoundedCornerShape(26.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("Unable to load this collage", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Unable to load this collage",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
             Spacer(Modifier.height(18.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = {}, modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(
+                    onClick = {},
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
                     Text("Saved")
                 }
-                OutlinedButton(onClick = onShare, modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp)) {
+                OutlinedButton(
+                    onClick = onShare,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
                     Text("Share")
                 }
             }
@@ -121,9 +148,18 @@ fun SavedCollageResultScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Brush.verticalGradient(colors = listOf(background, Color.Transparent)))
-                .statusBarsPadding()
-                .padding(horizontal = 5.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            background,
+                            background.copy(0.95f),
+                            background.copy(0.85f),
+                            background.copy(0.45f),
+                            Color.Transparent
+                        )
+                    )
+                )
+                .padding(vertical = 16.dp, horizontal = 5.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {

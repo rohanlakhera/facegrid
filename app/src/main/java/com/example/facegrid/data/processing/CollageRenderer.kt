@@ -30,14 +30,20 @@ object CollageRenderer {
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = TITLE_COLOR
             textSize = 64f
-            typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
+            typeface =
+                android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
         }
         val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = SUBTITLE_COLOR
             textSize = 30f
         }
         canvas.drawText("FaceGrid", MARGIN, 92f, titlePaint)
-        canvas.drawText("${identities.size} people · ${identities.sumOf { it.appearanceCount }} appearances", MARGIN, 138f, subtitlePaint)
+        canvas.drawText(
+            "${identities.size} people · ${identities.sumOf { it.appearanceCount }} appearances",
+            MARGIN,
+            138f,
+            subtitlePaint
+        )
         if (identities.isEmpty()) return output
         val columns = if (identities.size == 1) 1 else 2
         val rows = ceil(identities.size / columns.toDouble()).toInt()
@@ -83,13 +89,19 @@ object CollageRenderer {
         val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textSize = max(26f, tile.width() * 0.075f)
-            typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
+            typeface =
+                android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
         }
         val detailPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = DETAIL_TEXT_COLOR
             textSize = max(20f, tile.width() * 0.052f)
         }
         canvas.drawText("Person ${identity.id}", tile.left + 24f, tile.bottom - 62f, labelPaint)
-        canvas.drawText("${identity.appearanceCount} appearance${if (identity.appearanceCount == 1) "" else "s"}", tile.left + 24f, tile.bottom - 28f, detailPaint)
+        canvas.drawText(
+            "${identity.appearanceCount} appearance${if (identity.appearanceCount == 1) "" else "s"}",
+            tile.left + 24f,
+            tile.bottom - 28f,
+            detailPaint
+        )
     }
 }

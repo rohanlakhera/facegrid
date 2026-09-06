@@ -34,7 +34,9 @@ fun ProcessingScreen(progress: ProgressUpdate) {
     )
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 28.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -47,7 +49,11 @@ fun ProcessingScreen(progress: ProgressUpdate) {
             color = MaterialTheme.colorScheme.secondary
         )
         Spacer(Modifier.height(30.dp))
-        Text(processingTitle(progress.stage), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text(
+            processingTitle(progress.stage),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
         Spacer(Modifier.height(10.dp))
         Text(
             processingDescription(progress.stage),
@@ -57,7 +63,11 @@ fun ProcessingScreen(progress: ProgressUpdate) {
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
         Spacer(Modifier.height(28.dp))
-        Text("This may take a little while.", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+        Text(
+            "This may take a little while.",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
     }
 }
 
@@ -68,11 +78,10 @@ private fun processingProgress(progress: ProgressUpdate): Float {
         0f
     }
 
-    // Extraction and detection share one band. Detection does not get a
-    // separate portion, preventing the indicator from jumping backwards.
     return when (progress.stage) {
         ProcessingStage.EXTRACTING,
         ProcessingStage.DETECTING -> phaseProgress * 0.65f
+
         ProcessingStage.EMBEDDING -> 0.65f + phaseProgress * 0.25f
         ProcessingStage.CLUSTERING -> 0.90f + phaseProgress * 0.10f
     }
@@ -81,6 +90,7 @@ private fun processingProgress(progress: ProgressUpdate): Float {
 private fun processingTitle(stage: ProcessingStage): String = when (stage) {
     ProcessingStage.EXTRACTING,
     ProcessingStage.DETECTING -> "Discovering the moments"
+
     ProcessingStage.EMBEDDING -> "Recognizing familiar faces"
     ProcessingStage.CLUSTERING -> "Putting it all together"
 }
@@ -88,6 +98,7 @@ private fun processingTitle(stage: ProcessingStage): String = when (stage) {
 private fun processingDescription(stage: ProcessingStage): String = when (stage) {
     ProcessingStage.EXTRACTING,
     ProcessingStage.DETECTING -> "Looking through your video and finding the people who make it special."
+
     ProcessingStage.EMBEDDING -> "Comparing appearances so each person gets their own place."
     ProcessingStage.CLUSTERING -> "Bringing each person’s best moments together and giving your portrait story its final shape."
 }

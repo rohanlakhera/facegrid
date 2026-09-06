@@ -19,17 +19,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 sealed interface FaceGridUiState {
     data class Home(
         val savedCollages: List<SavedCollage> = emptyList(),
         val isLoadingSaved: Boolean = true
     ) : FaceGridUiState
+
     data class SavedCollages(val collages: List<SavedCollage>) : FaceGridUiState
     data class SavedResult(
         val collage: SavedCollage,
         val previousCollages: List<SavedCollage>? = null
     ) : FaceGridUiState
+
     data class Processing(val progress: ProgressUpdate) : FaceGridUiState
     data class Result(val output: ProcessingResult, val savedUri: Uri? = null) : FaceGridUiState
     data class Error(val message: String) : FaceGridUiState
@@ -53,13 +56,14 @@ class FaceGridViewModel(
         )
         viewModelScope.launch {
             try {
-                val result = processVideo(uri) { progress -> _state.value = FaceGridUiState.Processing(progress) }
-                // Let the determinate indicator visibly settle at 100% before
-                // replacing it with the finished collage.
-                delay(320)
+                val result = processVideo(uri) { progress ->
+                    _state.value = FaceGridUiState.Processing(progress)
+                }
+                delay(320.milliseconds)
                 _state.value = FaceGridUiState.Result(result)
             } catch (error: Throwable) {
-                _state.value = FaceGridUiState.Error(error.message ?: "Could not process this video")
+                _state.value =
+                    FaceGridUiState.Error(error.message ?: "Could not process this video")
             }
         }
     }
@@ -69,7 +73,9 @@ class FaceGridViewModel(
         viewModelScope.launch {
             runCatching { saveCollage(current.output.collage) }
                 .onSuccess { uri -> _state.value = current.copy(savedUri = uri) }
-                .onFailure { error -> _state.value = FaceGridUiState.Error(error.message ?: "Could not save collage") }
+                .onFailure { error ->
+                    _state.value = FaceGridUiState.Error(error.message ?: "Could not save collage")
+                }
         }
     }
 
@@ -85,7 +91,10 @@ class FaceGridViewModel(
                     _state.value = current.copy(savedUri = uri)
                     onReady(uri)
                 }
-                .onFailure { error -> _state.value = FaceGridUiState.Error(error.message ?: "Could not prepare collage") }
+                .onFailure { error ->
+                    _state.value =
+                        FaceGridUiState.Error(error.message ?: "Could not prepare collage")
+                }
         }
     }
 

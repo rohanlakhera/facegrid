@@ -57,10 +57,14 @@ fun ResultScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
-                .padding(top = 75.dp, bottom = 22.dp)
+                .padding(top = 70.dp, bottom = 22.dp)
         ) {
             Spacer(Modifier.height(18.dp))
-            Text("Your story", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Your story",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold
+            )
             Text(
                 "${result.output.identities.size} people · ${result.output.identities.sumOf { it.appearanceCount }} moments",
                 style = MaterialTheme.typography.bodyLarge,
@@ -68,7 +72,10 @@ fun ResultScreen(
             )
             result.output.videoName?.let { name ->
                 Spacer(Modifier.height(10.dp))
-                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant
+                ) {
                     Text(
                         name,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -91,37 +98,63 @@ fun ResultScreen(
             Image(
                 bitmap = result.output.collage.asImageBitmap(),
                 contentDescription = "FaceGrid story collage",
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(26.dp)),
                 contentScale = ContentScale.FillWidth
             )
             Spacer(Modifier.height(18.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = onSave, modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(
+                    onClick = onSave,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
                     Text(if (result.savedUri == null) "Save to gallery" else "Saved")
                 }
-                OutlinedButton(onClick = onShare, modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp)) {
+                OutlinedButton(
+                    onClick = onShare,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
                     Text("Share")
                 }
             }
             Spacer(Modifier.height(12.dp))
-            OutlinedButton(onClick = onPickAnother, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+            OutlinedButton(
+                onClick = onPickAnother,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
                 Text("Create another collage")
             }
         }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(background, background.copy(0.5f))
+                        colors = listOf(
+                            background,
+                            background.copy(0.95f),
+                            background.copy(0.85f),
+                            background.copy(0.45f),
+                            Color.Transparent
+                        )
                     )
                 )
-                .padding(horizontal = 5.dp)
+                .padding(vertical = 16.dp, horizontal = 5.dp)
         ) {
             Row(verticalAlignment = CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(painter = painterResource(R.drawable.arrow_back), contentDescription = "go back", modifier = Modifier.size(26.dp))
+                    Icon(
+                        painter = painterResource(R.drawable.arrow_back),
+                        contentDescription = "go back",
+                        modifier = Modifier.size(26.dp)
+                    )
                 }
                 FaceGridBrand()
             }
@@ -133,6 +166,11 @@ fun ResultScreen(
 @Composable
 private fun ResultScreenPreview() {
     FaceGridTheme {
-        ResultScreen(result = PreviewData.result(), onSave = {}, onShare = {}, onPickAnother = {}, onBack = {})
+        ResultScreen(
+            result = PreviewData.result(),
+            onSave = {},
+            onShare = {},
+            onPickAnother = {},
+            onBack = {})
     }
 }

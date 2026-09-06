@@ -41,7 +41,6 @@ data class FaceObservation(
     val leftEyeOpenProbability: Float,
     val rightEyeOpenProbability: Float,
     val sharpness: Double,
-    /** All deduplicated face boxes detected in this source frame. */
     val frameFaceBoxes: List<Rect> = emptyList()
 )
 

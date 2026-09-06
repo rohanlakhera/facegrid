@@ -19,8 +19,8 @@ fun varianceOfLaplacian(bitmap: Bitmap, face: Rect): Double {
     for (index in pixels.indices) {
         val color = pixels[index]
         gray[index] = 0.299 * ((color shr 16) and 0xff) +
-            0.587 * ((color shr 8) and 0xff) +
-            0.114 * (color and 0xff)
+                0.587 * ((color shr 8) and 0xff) +
+                0.114 * (color and 0xff)
     }
     var sum = 0.0
     var sumSquares = 0.0
@@ -28,7 +28,8 @@ fun varianceOfLaplacian(bitmap: Bitmap, face: Rect): Double {
     for (y in 1 until height - 1) {
         for (x in 1 until width - 1) {
             val index = y * width + x
-            val laplacian = gray[index - width] + gray[index - 1] - 4 * gray[index] + gray[index + 1] + gray[index + width]
+            val laplacian =
+                gray[index - width] + gray[index - 1] - 4 * gray[index] + gray[index + 1] + gray[index + width]
             sum += laplacian
             sumSquares += laplacian * laplacian
             count++

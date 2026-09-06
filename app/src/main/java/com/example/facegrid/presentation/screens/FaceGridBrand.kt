@@ -31,13 +31,13 @@ fun FaceGridBrand(modifier: Modifier = Modifier) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(15.dp)
+                    .size(16.dp)
                     .clip(RoundedCornerShape(5.dp))
                     .background(MaterialTheme.colorScheme.tertiary)
             )
             Box(
                 modifier = Modifier
-                    .size(10.dp)
+                    .size(12.dp)
                     .clip(RoundedCornerShape(4.dp))
                     .background(Color.White)
                     .align(Alignment.BottomEnd)

@@ -36,11 +36,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.facegrid.R
 import com.example.facegrid.domain.model.SavedCollage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.facegrid.ui.theme.FaceGridTheme
 import java.text.DateFormat
 import java.util.Date
 
@@ -50,52 +53,57 @@ fun SavedCollagesScreen(
     onBack: () -> Unit,
     onOpen: (SavedCollage) -> Unit
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(top = 14.dp, end = 20.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
-    ) {
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 6.dp)
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        painter = painterResource(R.drawable.arrow_back),
-                        contentDescription = "go back",
-                        modifier = Modifier.size(26.dp)
-                    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = 14.dp, end = 20.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 6.dp)
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            painter = painterResource(R.drawable.arrow_back),
+                            contentDescription = "go back",
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                    Column(modifier = Modifier.padding(start = 2.dp)) {
+                        Text(
+                            "Saved collages",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "${collages.size} ${if (collages.size == 1) "story" else "stories"}",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
-                Column(modifier = Modifier.padding(start = 2.dp)) {
-                    Text(
-                        "Saved collages",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "${collages.size} ${if (collages.size == 1) "story" else "stories"}",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            }
+            if (collages.isNotEmpty()) {
+                items(collages, key = { it.uri.toString() }) { collage ->
+                    SavedCollageGridCard(collage, onClick = { onOpen(collage) })
                 }
             }
         }
+        
         if (collages.isEmpty()) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Text(
-                    "Your saved collages will appear here.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 24.dp)
-                )
-            }
-        } else {
-            items(collages, key = { it.uri.toString() }) { collage ->
-                SavedCollageGridCard(collage, onClick = { onOpen(collage) })
-            }
+            Text(
+                "Your saved collages will appear here.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 16.dp)
+            )
         }
     }
 }
@@ -145,6 +153,18 @@ private fun SavedCollageGridCard(collage: SavedCollage, onClick: () -> Unit) {
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 7.dp, start = 2.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SavedCollagesScreenEmptyPreview() {
+    FaceGridTheme {
+        SavedCollagesScreen(
+            collages = emptyList(),
+            onBack = {},
+            onOpen = {}
         )
     }
 }

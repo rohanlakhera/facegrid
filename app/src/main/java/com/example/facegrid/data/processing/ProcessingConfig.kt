@@ -19,7 +19,10 @@ object ProcessingConfig {
     const val SINGLETON_MERGE_SIMILARITY_THRESHOLD = 0.45f
     const val SINGLETON_MERGE_MARGIN = 0.03f
     const val SEGMENT_SIMILARITY_TOP_K = 3
-    const val MAX_SEGMENT_CANDIDATE_FRAMES = 5
+    // Clustering compares the top three candidate similarities, so keeping
+    // more than three candidates adds inference cost without being used by
+    // the final comparison.
+    const val MAX_SEGMENT_CANDIDATE_FRAMES = 3
     const val MODEL_ASSET_NAME = "ghostfacenet_float16.tflite"
     const val MODEL_INPUT_SIZE = 112
     const val EMBEDDING_FALLBACK_CROP_SCALE = 1.25f

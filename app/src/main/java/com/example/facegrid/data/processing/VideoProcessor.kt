@@ -32,7 +32,10 @@ class VideoProcessor(private val context: Context) {
                     .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
                     .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
                     .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
-                    .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
+                    // Contour points are not used by FaceGrid. Avoiding this
+                    // extra ML Kit output keeps the accurate detector while
+                    // reducing per-frame work.
+                    .setContourMode(FaceDetectorOptions.CONTOUR_MODE_NONE)
                     .build()
             )
             val embedder = GhostFaceNetEmbedder(context)

@@ -30,5 +30,3 @@ All tuning values are in `data/processing/ProcessingConfig.kt`. The default samp
 
 - ML Kit face detection and the bundled TFLite model are device-side, but processing time and memory use grow with video duration and face count.
 - The tracker intentionally closes an appearance when a qualified face cannot be matched in the next sampled frame.
-- The fallback descriptor is intended for development and should not be used for graded identity accuracy.
-- Real-device testing is recommended, especially for long or high-resolution videos and pre-Android 10 gallery permissions.

@@ -48,37 +48,67 @@ class FaceGridViewModel(
     private val _state = MutableStateFlow<FaceGridUiState>(FaceGridUiState.Home())
     val state: StateFlow<FaceGridUiState> = _state.asStateFlow()
     private var processingJob: Job? = null
+    private val processingLock = Any()
+    @Volatile
+    private var processingGeneration = 0L
 
     init {
         refreshSavedCollages()
     }
 
     fun processVideo(uri: Uri) {
-        processingJob?.cancel()
-        _state.value = FaceGridUiState.Processing(
-            ProgressUpdate(ProcessingStage.EXTRACTING, 0, 0, "Preparing video")
-        )
+        val generation: Long
+        val previousJob: Job?
+        synchronized(processingLock) {
+            generation = ++processingGeneration
+            previousJob = processingJob
+            _state.value = FaceGridUiState.Processing(
+                ProgressUpdate(ProcessingStage.EXTRACTING, 0, 0, "Preparing video")
+            )
+        }
+        previousJob?.cancel()
         processingJob = viewModelScope.launch {
             try {
                 val result = processVideo(uri) { progress ->
-                    _state.value = FaceGridUiState.Processing(progress)
+                    synchronized(processingLock) {
+                        if (processingGeneration == generation) {
+                            _state.value = FaceGridUiState.Processing(progress)
+                        }
+                    }
                 }
                 delay(320.milliseconds)
-                _state.value = FaceGridUiState.Result(result)
+                synchronized(processingLock) {
+                    if (processingGeneration == generation) {
+                        _state.value = FaceGridUiState.Result(result)
+                    }
+                }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Throwable) {
-                _state.value =
-                    FaceGridUiState.Error(error.message ?: "Could not process this video")
+                synchronized(processingLock) {
+                    if (processingGeneration == generation) {
+                        _state.value =
+                            FaceGridUiState.Error(error.message ?: "Could not process this video")
+                    }
+                }
             } finally {
-                processingJob = null
+                synchronized(processingLock) {
+                    if (processingGeneration == generation) {
+                        processingJob = null
+                    }
+                }
             }
         }
     }
 
     fun cancelProcessing() {
-        processingJob?.cancel()
-        processingJob = null
+        val job: Job?
+        synchronized(processingLock) {
+            processingGeneration++
+            job = processingJob
+            processingJob = null
+        }
+        job?.cancel()
         reset()
     }
 
@@ -113,9 +143,14 @@ class FaceGridViewModel(
     }
 
     fun reset() {
-        processingJob?.cancel()
-        processingJob = null
-        _state.value = FaceGridUiState.Home(isLoadingSaved = true)
+        val job: Job?
+        synchronized(processingLock) {
+            processingGeneration++
+            job = processingJob
+            processingJob = null
+            _state.value = FaceGridUiState.Home(isLoadingSaved = true)
+        }
+        job?.cancel()
         refreshSavedCollages()
     }
 

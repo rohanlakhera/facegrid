@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.net.Uri
-import com.google.android.gms.tasks.Tasks
+import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetector
@@ -15,9 +15,12 @@ import com.example.facegrid.domain.model.FaceObservation
 import com.example.facegrid.domain.model.ProcessingResult
 import com.example.facegrid.domain.model.ProcessingStage
 import com.example.facegrid.domain.model.ProgressUpdate
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import android.media.MediaMetadataRetriever
 import android.provider.OpenableColumns
@@ -39,6 +42,13 @@ class VideoProcessor(private val context: Context) {
                     .build()
             )
             val embedder = GhostFaceNetEmbedder(context)
+            val cancellationHandle = currentCoroutineContext()[Job]?.invokeOnCompletion { cause ->
+                if (cause is CancellationException) {
+                    runCatching { detector.close() }
+                    runCatching { embedder.close() }
+                    runCatching { retriever.release() }
+                }
+            }
             try {
                 val durationMs =
                     retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
@@ -225,20 +235,22 @@ class VideoProcessor(private val context: Context) {
                     videoName = resolveVideoName(uri)
                 )
             } finally {
+                cancellationHandle?.dispose()
                 embedder.close()
                 detector.close()
                 retriever.release()
             }
         }
 
-    private fun detectFaces(
+    private suspend fun detectFaces(
         detector: FaceDetector,
         bitmap: Bitmap,
         frameIndex: Int,
         timestampUs: Long
     ): List<FaceObservation> {
-        val faces =
-            Tasks.await(detector.process(InputImage.fromBitmap(bitmap, 0)), 30, TimeUnit.SECONDS)
+        currentCoroutineContext().ensureActive()
+        val faces = detector.process(InputImage.fromBitmap(bitmap, 0)).awaitCancellable()
+        currentCoroutineContext().ensureActive()
         val observations = faces.map { face ->
             FaceObservation(
                 frameIndex = frameIndex,
@@ -261,6 +273,23 @@ class VideoProcessor(private val context: Context) {
         val frameBoxes = observations.map { Rect(it.boundingBox) }
         return observations.map { it.copy(frameFaceBoxes = frameBoxes.map(::Rect)) }
     }
+
+    private suspend fun <T> Task<T>.awaitCancellable(): T =
+        suspendCancellableCoroutine { continuation ->
+            addOnCompleteListener { task ->
+                if (!continuation.isActive) return@addOnCompleteListener
+                when {
+                    task.isCanceled -> continuation.cancel(
+                        CancellationException("ML Kit task cancelled")
+                    )
+
+                    task.isSuccessful -> continuation.resumeWith(Result.success(task.result))
+                    else -> continuation.resumeWith(
+                        Result.failure(task.exception ?: IllegalStateException("ML Kit task failed"))
+                    )
+                }
+            }
+        }
 
     private fun resolveVideoName(uri: Uri): String? {
         context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)

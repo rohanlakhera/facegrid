@@ -13,6 +13,8 @@ import java.io.Closeable
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import org.tensorflow.lite.Interpreter
 import com.example.facegrid.domain.model.FaceObservation
@@ -39,12 +41,14 @@ class GhostFaceNetEmbedder(private val context: Context) : FaceEmbedder {
 
     override suspend fun embed(face: FaceObservation): FloatArray =
         withContext(Dispatchers.Default) {
+            currentCoroutineContext().ensureActive()
             val model = interpreter ?: return@withContext fallback.embed(face)
             val input = prepareInput(face)
             val outputSize =
                 model.getOutputTensor(0).shape().fold(1) { product, value -> product * value }
             val output = Array(1) { FloatArray(outputSize) }
             model.run(input, output)
+            currentCoroutineContext().ensureActive()
             normalize(output[0])
         }
 

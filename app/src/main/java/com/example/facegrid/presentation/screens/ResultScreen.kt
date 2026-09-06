@@ -109,7 +109,7 @@ fun ResultScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Button(
-                    onClick = onSave,
+                    onClick = { if (result.savedUri == null) onSave() },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(16.dp)
                 ) {

@@ -8,6 +8,15 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -95,47 +104,101 @@ fun FaceGridApp(viewModel: FaceGridViewModel) {
                 .padding(padding),
             color = MaterialTheme.colorScheme.background
         ) {
-            when (val current = state) {
-                is FaceGridUiState.Home -> HomeScreen(
-                    savedCollages = current.savedCollages,
-                    isLoadingSaved = current.isLoadingSaved,
-                    onPick = { videoPicker.launch(arrayOf("video/*")) },
-                    onSeeAll = viewModel::showSavedCollages,
-                    onOpen = viewModel::showSavedCollage
-                )
-
-                is FaceGridUiState.SavedCollages -> SavedCollagesScreen(
-                    collages = current.collages,
-                    onBack = viewModel::reset,
-                    onOpen = viewModel::showSavedCollage
-                )
-
-                is FaceGridUiState.SavedResult -> SavedCollageResultScreen(
-                    collage = current.collage,
-                    onBack = viewModel::backFromSavedCollage,
-                    onShare = { shareCollage(context, current.collage.uri) },
-                    onDelete = {
-                        withGalleryPermission { viewModel.deleteSavedCollage(current.collage) }
+            AnimatedContent(
+                targetState = state,
+                contentKey = { it.screen },
+                transitionSpec = {
+                    if (initialState.screen == targetState.screen) {
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else {
+                        val forward = isForwardTransition(initialState.screen, targetState.screen)
+                        (
+                            slideInHorizontally(
+                                animationSpec = tween(220),
+                                initialOffsetX = { width -> if (forward) width else -width }
+                            ) + fadeIn(animationSpec = tween(220))
+                        ) togetherWith (
+                            slideOutHorizontally(
+                                animationSpec = tween(220),
+                                targetOffsetX = { width -> if (forward) -width else width }
+                            ) + fadeOut(animationSpec = tween(220))
+                        )
                     }
-                )
+                },
+                label = "FaceGrid screen transition"
+            ) { current ->
+                when (current) {
+                    is FaceGridUiState.Home -> HomeScreen(
+                        savedCollages = current.savedCollages,
+                        isLoadingSaved = current.isLoadingSaved,
+                        onPick = { videoPicker.launch(arrayOf("video/*")) },
+                        onSeeAll = viewModel::showSavedCollages,
+                        onOpen = viewModel::showSavedCollage
+                    )
 
-                is FaceGridUiState.Processing -> ProcessingScreen(current.progress)
-                is FaceGridUiState.Result -> ResultScreen(
-                    result = current,
-                    onSave = { withGalleryPermission(viewModel::saveCollage) },
-                    onShare = {
-                        withGalleryPermission {
-                            viewModel.shareCollage { uri -> shareCollage(context, uri) }
+                    is FaceGridUiState.SavedCollages -> SavedCollagesScreen(
+                        collages = current.collages,
+                        onBack = viewModel::reset,
+                        onOpen = viewModel::showSavedCollage
+                    )
+
+                    is FaceGridUiState.SavedResult -> SavedCollageResultScreen(
+                        collage = current.collage,
+                        onBack = viewModel::backFromSavedCollage,
+                        onShare = { shareCollage(context, current.collage.uri) },
+                        onDelete = {
+                            withGalleryPermission { viewModel.deleteSavedCollage(current.collage) }
                         }
-                    },
-                    onPickAnother = { videoPicker.launch(arrayOf("video/*")) },
-                    onBack = viewModel::reset
-                )
+                    )
 
-                is FaceGridUiState.Error -> ErrorScreen(current.message, viewModel::reset)
+                    is FaceGridUiState.Processing -> ProcessingScreen(current.progress)
+                    is FaceGridUiState.Result -> ResultScreen(
+                        result = current,
+                        onSave = { withGalleryPermission(viewModel::saveCollage) },
+                        onShare = {
+                            withGalleryPermission {
+                                viewModel.shareCollage { uri -> shareCollage(context, uri) }
+                            }
+                        },
+                        onPickAnother = { videoPicker.launch(arrayOf("video/*")) },
+                        onBack = viewModel::reset
+                    )
+
+                    is FaceGridUiState.Error -> ErrorScreen(current.message, viewModel::reset)
+                }
             }
         }
     }
+}
+
+private enum class FaceGridScreen {
+    HOME,
+    SAVED_COLLAGES,
+    SAVED_RESULT,
+    PROCESSING,
+    RESULT,
+    ERROR
+}
+
+private val FaceGridUiState.screen: FaceGridScreen
+    get() = when (this) {
+        is FaceGridUiState.Home -> FaceGridScreen.HOME
+        is FaceGridUiState.SavedCollages -> FaceGridScreen.SAVED_COLLAGES
+        is FaceGridUiState.SavedResult -> FaceGridScreen.SAVED_RESULT
+        is FaceGridUiState.Processing -> FaceGridScreen.PROCESSING
+        is FaceGridUiState.Result -> FaceGridScreen.RESULT
+        is FaceGridUiState.Error -> FaceGridScreen.ERROR
+    }
+
+private fun isForwardTransition(
+    from: FaceGridScreen,
+    to: FaceGridScreen
+): Boolean = when {
+    from == FaceGridScreen.HOME && to != FaceGridScreen.HOME -> true
+    from == FaceGridScreen.SAVED_COLLAGES && to == FaceGridScreen.SAVED_RESULT -> true
+    from == FaceGridScreen.PROCESSING && to == FaceGridScreen.RESULT -> true
+    from == FaceGridScreen.PROCESSING && to == FaceGridScreen.ERROR -> true
+    else -> false
 }
 
 private fun shareCollage(context: Context, uri: android.net.Uri) {

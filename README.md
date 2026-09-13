@@ -2,6 +2,12 @@
 
 FaceGrid is an on-device Android app that samples a selected portrait video, detects clearly visible faces, tracks continuous appearances, groups those appearances into identities, and renders one generous representative crop per person.
 
+## Demo
+
+The demo shows FaceGrid selecting a portrait video, processing the sampled frames, grouping continuous face appearances into identities, and generating representative face crops for each person.
+
+https://github.com/user-attachments/assets/b49f83e6-a4ff-4394-aca0-3da56fe9f4b2
+
 ## Build and run
 
 1. Open the project in Android Studio with an Android SDK that includes API 37, or run `./gradlew assembleDebug` from the project root.
